@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration>
+	<Appenders>
+	  <RollingFile name="events-out" fileName="${sys:logPath}/events.log"
+			filePattern="${sys:logPath}/events-%d{yyyy-MM}/events-%d{yyyy-MM-dd}-%i.log.xz" immediateFlush="false" bufferSize="131072">
+			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="128 MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="200">
+			  <!-- Delete files older than 15 d -->
+			  <Delete basePath="${sys:logPath}" maxDepth="2">
+			    <IfFileName glob="events-*/events-*" />
+			    <IfLastModified age="P15D" />
+			  </Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+
+		<RollingFile name="stats-out" fileName="${sys:logPath}/stats.log"
+			filePattern="${sys:logPath}/stats-%d{yyyy-MM}/stats-%d{yyyy-MM-dd}.log.xz">
+			<ThresholdFilter level="debug" onMatch="accept"
+				onMismatch="deny" />
+			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} %c - %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="128 MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="200">
+			  <!-- Delete files older than 60 d -->
+			  <Delete basePath="${sys:logPath}" maxDepth="2">
+			    <IfFileName glob="stats-*/stats-*" />
+			    <IfLastModified age="P60D" />
+			  </Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+		
+		<RollingFile name="debug-out" fileName="${sys:logPath}/debug.log"
+			filePattern="${sys:logPath}/debug-%d{yyyy-MM}/debug-%d{yyyy-MM-dd}-%i.log.xz">
+			<ThresholdFilter level="debug" onMatch="accept"
+				onMismatch="deny" />
+			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} %c - %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="128 MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="200">
+			  <!-- Delete files older than 7 d -->
+			  <Delete basePath="${sys:logPath}" maxDepth="2">
+			    <IfFileName glob="debug-*/debug-*" />
+			    <IfLastModified age="P7D" />
+			  </Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+
+		<RollingFile name="info-out" fileName="${sys:logPath}/info.log"
+			filePattern="${sys:logPath}/info-%d{yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log.xz">
+			<ThresholdFilter level="info" onMatch="accept"
+				onMismatch="deny" />
+			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} %c - %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="128 MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="200">
+			  <!-- Delete files older than 60 d -->
+			  <Delete basePath="${sys:logPath}" maxDepth="2">
+			    <IfFileName glob="info-*/info-*" />
+			    <IfLastModified age="P60D" />
+			  </Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+
+		<RollingFile name="warn-out" fileName="${sys:logPath}/warn.log"
+			filePattern="${sys:logPath}/warn-%d{yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log.xz">
+			<ThresholdFilter level="warn" onMatch="accept"
+				onMismatch="deny" />
+			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} %c - %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="128 MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="200">
+			  <!-- Delete files older than 15 d -->
+			  <Delete basePath="${sys:logPath}" maxDepth="2">
+			    <IfFileName glob="warn-*/warn-*" />
+			    <IfLastModified age="P15D" />
+			  </Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+
+		<RollingFile name="error-out" fileName="${sys:logPath}/error.log"
+			filePattern="${sys:logPath}/error-%d{yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.xz">
+			<ThresholdFilter level="error" onMatch="accept"
+				onMismatch="deny" />
+			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} %c - %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="128 MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="200">
+			  <!-- Delete files older than 15 d -->
+			  <Delete basePath="${sys:logPath}" maxDepth="2">
+			    <IfFileName glob="error-*/error-*" />
+			    <IfLastModified age="P15D" />
+			  </Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+	</Appenders>
+
+	<Loggers>
+
+<!--		
+		<Logger name="org.eclipse.jetty.client.HttpDestination" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+		<Logger name="org.eclipse.jetty.client.AbstractConnectionPool" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+		<Logger name="org.eclipse.jetty.alpn.client.ALPNClientConnection" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+		<Logger name="org.eclipse.jetty.alpn.client.ALPNClientConnectionFactory" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+		<Logger name="org.eclipse.jetty.alpn.conscrpyt.client.ConscryptClientALPNProcessor" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+		<Logger name="org.eclipse.jetty.io.ManagedSelector" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		  </Logger>		
+
+		<AsyncLogger name="org.eclipse.jetty.io.ChannelEndPoint" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		  </AsyncLogger>
+
+		<Logger name="org.eclipse.jetty.io.AbstractConnection" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		  </Logger>
+
+		<Logger name="org.eclipse.jetty.util.ssl.SslContextFactory" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+
+		<Logger name="org.eclipse.jetty.io.ssl.SslConnection" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+
+		<Logger name="org.eclipse.jetty.websocket.common.WebSocketSession" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>
+
+		<Logger name="org.eclipse.jetty.websocket.common.events.AbstractEventDriver" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		</Logger>				
+
+
+-->
+                <Logger name="org.eclipse.jetty" level="warn"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		  <Appender-ref ref="info-out" />
+		  <Appender-ref ref="warn-out" />
+		  <Appender-ref ref="error-out" />
+		</Logger>				
+		<AsyncLogger name="org.twinlife.web.ProxyEvent" level="info"
+			additivity="false">
+			<Appender-ref ref="events-out" />
+		</AsyncLogger>
+
+                <Logger name="org.twinlife" level="debug"
+			additivity="false">
+		  <Appender-ref ref="debug-out" />
+		  <Appender-ref ref="info-out" />
+		  <Appender-ref ref="warn-out" />
+		  <Appender-ref ref="error-out" />
+		</Logger>
+
+		<Root level="info">
+		  <Appender-ref ref="info-out" />
+			<AppenderRef ref="warn-out" />
+			<AppenderRef ref="error-out" />
+		</Root>
+	</Loggers>
+</Configuration>

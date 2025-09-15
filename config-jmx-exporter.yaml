@@ -1,0 +1,7 @@
+
+# Configuration file for the Prometheus JMX exporter
+
+---
+# Convert all names to lowercase
+lowercaseOutputLabelNames: true
+lowercaseOutputName: true

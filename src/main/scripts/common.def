@@ -1,0 +1,145 @@
+# Common functions
+
+#
+# Reports an info message.
+#  args: message
+#
+info() {
+    echo "$*"
+}
+
+#
+# Reports an error message.
+#  args: message
+#
+error() {
+    echo "Error: $*"
+}
+
+#
+# Reports a fatal error. It stops execution of current script.
+#  args: message
+#
+fatal() {
+    echo "Fatal error: $*"
+    exit 2
+}
+
+#
+# Copy directory content. The copy is recursive.
+#  $1: source directory
+#  $2: target directory. It is created is needed.
+#
+copy_dir() {
+    [[ -d $2 ]] || mkdir -p $2
+    cp -r $1/*[!~] $2
+}
+
+copy_bin_dir() {
+    [[ -d $2 ]] || mkdir -p $2
+    cp -r $1/*[!~] $2
+
+    # Really want these files executable by everyone
+    chmod -R a+rx $2/*
+}
+
+#
+# Create a new directory writeable by service user.
+#  $1: directory to create
+#
+create_writeable_dir() {
+    [[ -d $1 ]] || mkdir -p $1
+    chown ${SERVICE_USER}:${SERVICE_GROUP} $1
+}
+
+#
+# Create a new directory.
+#  $1: directory to create
+#
+create_dir() {
+    [[ -d $1 ]] || mkdir -p $1
+}
+
+#
+# Create a symbolic link
+#  $1: target of the link
+#  $2: path of the created link
+#
+symlink() {
+    if [[ -e "$2" ]]; then
+	if [[ -L "$2" ]]; then
+	    rm $2
+	else
+	    error "The path $2 already exists and is not a symbolic link !"
+	    error "Please, remove or rename the existing $2 path and create a symbolic link $2 pointing to $1"
+	    return
+	fi
+    fi
+    ln -s -f $1 $2
+}
+
+#
+# Install a file in a given directory, but only if it does not exist yet.
+# This behavior is to preserve any existing changed in config files.
+#  $1: path of file to install
+#  $2: target directory
+#
+install_config_file() {
+	cp -an $1 $2
+}
+
+#
+# Check if a service is currently running
+#  $1: service name
+#
+is_service_running() {
+    systemctl is-active --quiet $1
+    return $?
+}
+
+#
+# Start a service
+#  $1: Service name
+#
+start_service() {
+    if is_service_running $1 ; then
+        info "Service '$1' is already running"
+    else
+        info "Start service '$1'"
+        systemctl start $1
+    fi
+}
+
+#
+# Checks if the current user (effective user id) is 'root'
+#
+is_not_root() {
+    if [[ $EUID -eq 0 ]]; then
+	return 1
+    fi
+    return 0
+}
+
+#
+# Create a new system user. A new group is created (same name as user) and used as primary group for this user.
+# The login directory of the user is arbitrarily set to the service installation path (as we need, for security issues, to
+# put an existing directory for the login directory).
+#  $1: name of user/group to create
+#
+create_user() {
+    adduser --system --group --no-create-home --home ${PREFIX}/${SERVICE_NAME} --quiet $1
+}
+
+#
+# Create a new user group
+#  $1: name of group to create
+#
+create_group() {
+    if [ ! $(/usr/bin/getent group $1) ]; then
+        /usr/sbin/groupadd $1
+    fi
+}
+
+# Local Variables:
+# mode: shell-script
+# End:

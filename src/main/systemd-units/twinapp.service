@@ -1,0 +1,15 @@
+[Unit]
+Description=Twinlife Web App service
+Requires=network.target remote-fs.target
+After=network.target remote-fs.target
+
+[Service]
+Type=simple
+User=twinapp
+EnvironmentFile=/etc/default/twinapp
+ExecStart=/opt/twinapp/bin/twinapp
+SuccessExitStatus=143
+SyslogIdentifier=twinapp
+
+[Install]
+WantedBy=multi-user.target

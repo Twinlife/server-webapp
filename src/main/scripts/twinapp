@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# Get the path where the script is actually installed
+SCRIPT=$(readlink -f "$0")
+SCRIPT_PATH=$(dirname "$SCRIPT")
+
+info() {
+    echo "Info: $*"
+}
+
+error() {
+    echo "Error: $*" >&2
+}
+
+fatal() {
+    error "$@"
+    exit 1
+}
+
+#
+# Display the first file name matching the given glob pattern
+#
+first_file() {
+    local files=($1)
+    echo "${files[0]}"
+}
+
+# Define path to 'java' launcher
+if [ -z "$JAVA_HOME" ]; then
+  JAVA="java"
+else
+  JAVA="$JAVA_HOME/bin/java"
+fi
+
+# Set path to the main directory
+SERVICE_HOME_PATH=`dirname ${SCRIPT_PATH}`
+SERVICE_LIB_PATH=${SERVICE_HOME_PATH}/lib
+SERVICE_CONFIG_PATH=/etc/twinapp
+SERVICE_JAR="${SERVICE_LIB_PATH}/twinapp-*.jar"
+
+# Optional JVM options
+TWINAPP_JVM_OPTIONS=${TWINAPP_JVM_OPTIONS:-""}
+
+# Virtual machine memory limit options have a default value, but can be overridden by end user
+TWINAPP_JVM_MEMORY_OPTIONS=${TWINAPP_JVM_MEMORY_OPTIONS:-"-Xmx6144m"}
+
+# Log4j configuration file can be defined by end user (must be located in the lib directory)
+TWINAPP_LOG4J_CONFIG=${TWINAPP_LOG4J_CONFIG:-"log4j2.xml"}
+
+# Directory where Log4j files are written
+TWINAPP_LOG4J_DIR=${TWINAPP_LOG4J_DIR:-"/var/log/twinapp"}
+
+# Configuration file which defines the port, application ID, service ID, Openfire hostname+port,...
+TWINAPP_CONFIG=${TWINAPP_CONFIG:-"${SERVICE_CONFIG_PATH}/config.ini"}
+
+if [ ! -f "${SERVICE_LIB_PATH}/${TWINAPP_LOG4J_CONFIG}" ]; then
+    fatal Missing or unreadable log4j configuration ${SERVICE_LIB_PATH}/${TWINAPP_LOG4J_CONFIG} file
+fi
+
+if [ ! -f "${TWINAPP_CONFIG}" ]; then
+  fatal Cannot read Twinapp configuration file: ${TWINAPP_CONFIG}
+fi
+
+if [ ! -d "${TWINAPP_LOG4J_DIR}" ]; then
+  fatal Log directory does not exist: ${TWINAPP_LOG4J_DIR}
+fi
+
+if [ ! -w "${TWINAPP_LOG4J_DIR}" ]; then
+  fatal Log directory is not writable: ${TWINAPP_LOG4J_DIR}
+fi
+
+if [ ! -f ${SERVICE_JAR} ]; then
+  fatal Missing twinapp jar: ${SERVICE_JAR}
+fi
+
+JVM_OPTIONS="${TWINAPP_JVM_OPTIONS} -DlogPath=${TWINAPP_LOG4J_DIR}"
+JVM_OPTIONS="${JVM_OPTIONS} -Dlog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector"
+JVM_OPTIONS="${JVM_OPTIONS} -Dlog4j.configurationFile=${SERVICE_LIB_PATH}/${TWINAPP_LOG4J_CONFIG}"
+JVM_OPTIONS="${JVM_OPTIONS} -Dlog4j2.formatMsgNoLookups=true"
+
+if [[ "${JMX_EXPORTER_ENABLED}" = 1 || "${JMX_EXPORTER_ENABLED}" = "true" ]]; then
+    PROMETHEUS_AGENT_JAR=$(first_file "${SERVICE_LIB_PATH}/jmx_prometheus_javaagent-*.jar")
+
+    if [[ -z ${PROMETHEUS_AGENT_JAR} ]]; then
+       fatal "JMX Prometheus Java agent (jmx_prometheus_javaagent JAR file) is not available"
+    fi
+
+    JAVA_AGENT_OPTION="-javaagent:${PROMETHEUS_AGENT_JAR}=${JMX_EXPORTER_PORT:-9188}:${SERVICE_CONFIG_PATH}/config-jmx-exporter.yaml"
+    if [[ -n "${CONFIG_WEB_EXPORTER}" ]]; then
+        if [[ -r "${CONFIG_WEB_EXPORTER}" ]]; then
+            JAVA_AGENT_OPTION="${JAVA_AGENT_OPTION};${CONFIG_WEB_EXPORTER}"
+        else
+            fatal "Configuration file ${CONFIG_WEB_EXPORTER} is not readable"
+        fi
+    fi
+    info "Prometheus JMX Exporter enabled. Using agent ${PROMETHEUS_AGENT_JAR}"
+    JVM_OPTIONS="${JVM_OPTIONS} ${JAVA_AGENT_OPTION}"
+fi
+
+cd ${SERVICE_HOME_PATH}
+exec ${JAVA} -Dfile.encoding=UTF-8 -server ${JVM_OPTIONS} -jar ${SERVICE_JAR} --config ${TWINAPP_CONFIG} 
